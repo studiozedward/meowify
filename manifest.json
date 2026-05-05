@@ -18,7 +18,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["confused_cat.jpg"],
+      "resources": ["confused_cat.jpg", "meowify-logo.png"],
       "matches": ["<all_urls>"]
     }
   ],
