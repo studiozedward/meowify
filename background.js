@@ -18,7 +18,7 @@ chrome.runtime.onInstalled.addListener(() => {
       });
     }
   });
-  chrome.alarms.create('reportMeows', { periodInMinutes: 60 });
+  chrome.alarms.create('reportMeows', { periodInMinutes: 10 });
 });
 
 function timedFetch(url, options, ms = 10000) {
@@ -38,7 +38,7 @@ async function reportPending() {
     const resp = await timedFetch(firebaseConfig.cloudFunctionUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wordCount, inputWordCount, isNewUser })
+      body: JSON.stringify({ wordCount, inputWordCount, isNewUser, appToken: firebaseConfig.appToken || '' })
     });
     if (resp.ok) {
       await chrome.storage.local.set({
@@ -46,8 +46,11 @@ async function reportPending() {
         pendingInputWordCount: 0,
         pendingNewUser: false,
         hasReportedAsNewUser: data.hasReportedAsNewUser || isNewUser,
-        cachedDataAt: 0
+        cachedDataAt: 0,
+        rateLimited: false
       });
+    } else if (resp.status === 429) {
+      await chrome.storage.local.set({ rateLimited: true });
     }
   } catch (e) {
     // Retry on next alarm
@@ -57,7 +60,7 @@ async function reportPending() {
 async function getData() {
   if (!firebaseConfig) return null;
   const cached = await chrome.storage.local.get(['cachedData', 'cachedDataAt']);
-  if (cached.cachedData && cached.cachedDataAt && Date.now() - cached.cachedDataAt < 300000) {
+  if (cached.cachedData && cached.cachedDataAt && Date.now() - cached.cachedDataAt < 1200000) {
     return cached.cachedData;
   }
   try {
@@ -87,7 +90,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         pendingInputWordCount: (r.pendingInputWordCount || 0) + (msg.inputWordCount || 0)
       };
       if (!r.hasReportedAsNewUser) updates.pendingNewUser = true;
-      chrome.storage.local.set(updates, () => reportPending());
+      chrome.storage.local.set(updates);
     });
     return false;
   }

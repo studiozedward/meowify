@@ -26,7 +26,13 @@
     const s = document.createElement('style');
     s.id = 'meowify-styles';
     s.textContent = `
-      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+      @font-face {
+        font-family: 'Nunito';
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: swap;
+        src: url('${chrome.runtime.getURL('nunito-latin.woff2')}') format('woff2');
+      }
       @keyframes meowify-gradient-shift {
         0%   { background-position: 0% 50%; }
         50%  { background-position: 100% 50%; }
@@ -106,7 +112,7 @@
     const parts = text.split(/\[([^\]]+)\]\(([^)]+)\)/);
     for (let i = 0; i < parts.length; i++) {
       if (i % 3 === 0) { if (parts[i]) frag.appendChild(document.createTextNode(parts[i])); }
-      else if (i % 3 === 1) { const a = document.createElement('a'); a.textContent = parts[i]; a.href = parts[i + 1]; a.target = '_blank'; a.rel = 'noopener'; a.style.cssText = 'color:#7c3aed;text-decoration:underline'; frag.appendChild(a); }
+      else if (i % 3 === 1) { const url = parts[i + 1]; if (!/^https?:\/\//.test(url)) { frag.appendChild(document.createTextNode(parts[i])); } else { const a = document.createElement('a'); a.textContent = parts[i]; a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.style.cssText = 'color:#7c3aed;text-decoration:underline'; frag.appendChild(a); } }
     }
     return frag;
   }
@@ -117,8 +123,8 @@
     document.getElementById('meowify-overlay')?.remove();
     const ov = document.createElement('div'); ov.id = 'meowify-overlay'; ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:2147483647;display:flex;align-items:center;justify-content:center;font-family:\'Nunito\',system-ui,-apple-system,sans-serif';
     const card = document.createElement('div'); card.style.cssText = 'background:linear-gradient(135deg,#fce4ec,#f3e5f5,#e8d5f5,#ede7f6);background-size:300% 300%;animation:meowify-gradient-shift 8s ease infinite;color:#111;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.2);width:min(90vw,560px);max-height:80vh;display:flex;flex-direction:column;overflow:hidden';
-    const head = document.createElement('div'); head.style.cssText = 'padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.08);display:flex;align-items:center';
-    const logo = document.createElement('img'); logo.src = chrome.runtime.getURL('meowify-logo.png'); logo.alt = 'Meowify'; logo.style.cssText = 'height:34px;width:auto;object-fit:contain;flex-shrink:0';
+    const head = document.createElement('div'); head.style.cssText = 'padding:22px 16px;border-bottom:1px solid rgba(0,0,0,.08);display:flex;align-items:center';
+    const logo = document.createElement('img'); logo.src = chrome.runtime.getURL('meowify-logo.png'); logo.alt = 'Meowify'; logo.style.cssText = 'height:40px;width:auto;object-fit:contain;flex-shrink:0';
     head.appendChild(logo);
     const body = document.createElement('div'); body.style.cssText = 'padding:16px;display:flex;flex-direction:column;gap:12px';
     const subtitle = document.createElement('div'); subtitle.textContent = mode === 'meow' ? 'Meowified text' : 'Unmeowified text'; subtitle.style.cssText = 'font-size:13px;font-weight:600;color:#444;margin-bottom:4px';
@@ -162,6 +168,16 @@
           });
         }
       } catch { stats.remove(); }
+      // Show rate-limit toast if flagged
+      try {
+        const rl = await chrome.storage.local.get('rateLimited');
+        if (rl.rateLimited) {
+          const toast = document.createElement('div');
+          toast.textContent = "\u{1F63A} You're meowing too fast! Counters will update shortly.";
+          toast.style.cssText = 'padding:8px 16px;border-top:1px solid rgba(0,0,0,.08);font:12px \'Nunito\',system-ui;color:#7c3aed;text-align:center;background:rgba(255,255,255,.4)';
+          msgBox.parentElement?.insertBefore(toast, msgBox.nextSibling);
+        }
+      } catch {}
     })();
     const foot = document.createElement('div'); foot.style.cssText = 'padding:12px 16px;border-top:1px solid rgba(0,0,0,.08);display:flex;gap:8px;justify-content:flex-end;background:rgba(255,255,255,.2)';
     const close = document.createElement('button'); close.textContent = 'Close'; close.style.cssText = 'padding:8px 14px;border:1px solid rgba(0,0,0,.12);border-radius:8px;background:rgba(255,255,255,.7);color:#111;cursor:pointer;font-family:inherit;font-size:13px'; close.onclick = () => ov.remove(); foot.appendChild(close);

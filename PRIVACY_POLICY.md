@@ -21,13 +21,17 @@ No text you highlight, encode, or decode is ever sent to any server. The actual 
 Meowify displays three community counters: total meowifiers, total meows generated, and total words meowed. To power these:
 
 - When you encode text, the **number of output words** and the **number of input words** are sent to a server. Only the counts (single integers) are sent — never the text itself, never the original message, and never any page content.
-- A random anonymous ID is generated on first use and stored locally on your device. This ID is used solely to avoid counting the same user twice. It is never linked to your identity.
-- Counter data is sent in batches (at most once per hour) to minimise network activity.
+- A flag is stored locally to track whether you have been counted. Only a one-time boolean ("new user: yes/no") is sent to the server — your anonymous ID never leaves your device.
+- Counter data is sent in batches (at most once every 10 minutes) to minimise network activity.
 - If the counter service is unavailable, the extension works exactly as before — encoding and decoding happen locally regardless.
 
 ## Announcements
 
 The modal may display short announcements (e.g. new features, tips). These are fetched from our server and contain only text and links written by the extension developer. No user data is sent when fetching announcements.
+
+## Server requests and IP addresses
+
+When counter data or announcements are exchanged with our server, your IP address is received as part of the standard web request. IP addresses are not stored, logged long-term, or linked to your usage data. We do not use IP addresses to identify or track individual users.
 
 ## Permissions
 
@@ -36,7 +40,11 @@ The modal may display short announcements (e.g. new features, tips). These are f
 | `clipboardWrite` | To copy encoded/decoded text to your clipboard when you click Copy |
 | `host_permissions: <all_urls>` | To run on any webpage so you can Meowify text wherever you are |
 | `storage` | To store your anonymous user ID and pending counter data locally |
-| `alarms` | To schedule batched counter reporting (at most once per hour) |
+| `alarms` | To schedule batched counter reporting (at most once every 10 minutes) |
+
+## Children's privacy
+
+Meowify is not directed at children under the age of 13. We do not knowingly collect personal information from children. If you believe a child under 13 has provided personal data through the extension, please contact us so we can take appropriate action.
 
 ## Contact
 
