@@ -1,0 +1,12 @@
+{
+  "rules": {
+    "counters": {
+      ".read": true,
+      ".write": false
+    },
+    "messages": {
+      ".read": true,
+      ".write": false
+    }
+  }
+}
