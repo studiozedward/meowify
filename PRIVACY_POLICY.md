@@ -1,6 +1,6 @@
 # Privacy Policy — Meowify
 
-**Last updated: May 2, 2026**
+**Last updated: May 5, 2026**
 
 ---
 
@@ -18,12 +18,16 @@ No text you highlight, encode, or decode is ever sent to any server. The actual 
 
 ## Community counters
 
-Meowify displays two community counters: total users and total words meowed. To power these:
+Meowify displays three community counters: total meowifiers, total meows generated, and total words meowed. To power these:
 
-- When you encode text, the **number of words** in the encoded output is sent to a server. Only the count (a single integer) is sent — never the text itself, never the original message, and never any page content.
+- When you encode text, the **number of output words** and the **number of input words** are sent to a server. Only the counts (single integers) are sent — never the text itself, never the original message, and never any page content.
 - A random anonymous ID is generated on first use and stored locally on your device. This ID is used solely to avoid counting the same user twice. It is never linked to your identity.
 - Counter data is sent in batches (at most once per hour) to minimise network activity.
 - If the counter service is unavailable, the extension works exactly as before — encoding and decoding happen locally regardless.
+
+## Announcements
+
+The modal may display short announcements (e.g. new features, tips). These are fetched from our server and contain only text and links written by the extension developer. No user data is sent when fetching announcements.
 
 ## Permissions
 
