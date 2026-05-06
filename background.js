@@ -57,12 +57,10 @@ async function reportPending() {
   }
 }
 
-async function getData() {
-  if (!firebaseConfig) return null;
-  const cached = await chrome.storage.local.get(['cachedData', 'cachedDataAt']);
-  if (cached.cachedData && cached.cachedDataAt && Date.now() - cached.cachedDataAt < 1200000) {
-    return cached.cachedData;
-  }
+// Fetches fresh counters + messages from Firebase and writes them to storage.
+// Fire-and-forget — callers do not await this.
+async function refreshData() {
+  if (!firebaseConfig) return;
   try {
     const [countersResp, messagesResp] = await Promise.all([
       timedFetch(firebaseConfig.databaseUrl + '/counters.json'),
@@ -72,10 +70,21 @@ async function getData() {
     const messages = messagesResp.ok ? (await messagesResp.json()) : null;
     const data = { counters, messages: Array.isArray(messages) ? messages.slice(0, 3) : [] };
     await chrome.storage.local.set({ cachedData: data, cachedDataAt: Date.now() });
-    return data;
   } catch (e) {
-    return cached.cachedData || null;
+    // Will retry on next getData() call
   }
+}
+
+// Returns cached data from storage immediately (fast). If the cache is stale,
+// kicks off a background refresh so the next call gets fresher data.
+// Never awaits the network — avoids the MV3 service-worker termination / 3-second
+// content-script timeout that was causing stats to silently disappear.
+async function getData() {
+  if (!firebaseConfig) return null;
+  const cached = await chrome.storage.local.get(['cachedData', 'cachedDataAt']);
+  const isFresh = cached.cachedDataAt && Date.now() - cached.cachedDataAt < 1200000;
+  if (!isFresh) refreshData(); // background refresh, do not await
+  return cached.cachedData || null;
 }
 
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -95,7 +104,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return false;
   }
   if (msg.type === 'getData') {
-    getData().then(sendResponse);
+    getData().then(sendResponse).catch(() => sendResponse(null));
     return true;
   }
 });

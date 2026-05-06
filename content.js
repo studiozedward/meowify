@@ -3,6 +3,13 @@
   const VOCAB = ["meow","mew","mrow","maww","purr","mrp","miau","mya","MEOW","MEW","MROW","MAWW","PURR","MRP","MIAU","MYA"];
   const MAP = Object.fromEntries(VOCAB.map((w,i)=>[w,i]));
 
+  // Capture extension resource URLs at injection time, while the context is guaranteed valid.
+  // Calling chrome.runtime.getURL() lazily (e.g. inside openModal) throws
+  // "Extension context invalidated" if the extension was reloaded after this tab opened.
+  const LOGO_URL = (() => { try { return chrome.runtime.getURL('meowify-logo.png'); } catch { return ''; } })();
+  const CAT_URL  = (() => { try { return chrome.runtime.getURL('confused_cat.jpg');  } catch { return ''; } })();
+  const FONT_URL = (() => { try { return chrome.runtime.getURL('nunito-latin.woff2'); } catch { return ''; } })();
+
   const encode = s => { const b=new TextEncoder().encode(s), o=[]; for(const x of b) o.push(VOCAB[x>>4],VOCAB[x&15]); return o.join(' '); };
   const normalize = s => s.replace(/[​-‍﻿]/g,'').trim().replace(/\s+/g,' ');
   const decode = m => { const t=normalize(m).split(' '); if(t.length<2||t.length%2) return null; const n=[]; for(const w of t){const v=MAP[w]; if(v===undefined) return null; n.push(v);} const bytes=[]; for(let i=0;i<n.length;i+=2) bytes.push((n[i]<<4)|n[i+1]); try{return new TextDecoder('utf-8',{fatal:true}).decode(new Uint8Array(bytes));}catch{return null;} };
@@ -31,7 +38,7 @@
         font-style: normal;
         font-weight: 400 700;
         font-display: swap;
-        src: url('${chrome.runtime.getURL('nunito-latin.woff2')}') format('woff2');
+        src: url('${FONT_URL}') format('woff2');
       }
       @keyframes meowify-gradient-shift {
         0%   { background-position: 0% 50%; }
@@ -124,7 +131,7 @@
     const ov = document.createElement('div'); ov.id = 'meowify-overlay'; ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:2147483647;display:flex;align-items:center;justify-content:center;font-family:\'Nunito\',system-ui,-apple-system,sans-serif';
     const card = document.createElement('div'); card.style.cssText = 'background:linear-gradient(135deg,#fce4ec,#f3e5f5,#e8d5f5,#ede7f6);background-size:300% 300%;animation:meowify-gradient-shift 8s ease infinite;color:#111;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.2);width:min(90vw,560px);max-height:80vh;display:flex;flex-direction:column;overflow:hidden';
     const head = document.createElement('div'); head.style.cssText = 'padding:22px 16px;border-bottom:1px solid rgba(0,0,0,.08);display:flex;align-items:center';
-    const logo = document.createElement('img'); logo.src = chrome.runtime.getURL('meowify-logo.png'); logo.alt = 'Meowify'; logo.style.cssText = 'height:40px;width:auto;object-fit:contain;flex-shrink:0';
+    const logo = document.createElement('img'); logo.src = LOGO_URL; logo.alt = 'Meowify'; logo.style.cssText = 'height:40px;width:auto;object-fit:contain;flex-shrink:0';
     head.appendChild(logo);
     const body = document.createElement('div'); body.style.cssText = 'padding:16px;display:flex;flex-direction:column;gap:12px';
     const subtitle = document.createElement('div'); subtitle.textContent = mode === 'meow' ? 'Meowified text' : 'Unmeowified text'; subtitle.style.cssText = 'font-size:13px;font-weight:600;color:#444;margin-bottom:4px';
@@ -132,7 +139,7 @@
     let res = null, ok = true;
     if (mode === 'meow') res = encode(last.text); else { res = decode(last.text); if (res === null) ok = false; }
     if (!ok) {
-      const img = document.createElement('img'); img.src = chrome.runtime.getURL('confused_cat.jpg'); img.style.cssText = 'width:180px;height:180px;object-fit:cover;border-radius:12px;margin:0 auto;display:block';
+      const img = document.createElement('img'); img.src = CAT_URL; img.style.cssText = 'width:180px;height:180px;object-fit:cover;border-radius:12px;margin:0 auto;display:block';
       const msg = document.createElement('div'); msg.textContent = "I can't read that :("; msg.style.cssText = 'text-align:center;font-size:16px;margin-top:8px';
       body.append(img, msg);
     } else {
