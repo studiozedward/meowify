@@ -152,13 +152,15 @@
       const inputWordCount = last.text.trim().split(/\s+/).filter(Boolean).length;
       try { chrome.runtime.sendMessage({ type: 'meowified', wordCount: res.split(' ').length, inputWordCount }); } catch {}
     }
+    // Notify pixel cat mascot of successful encode/decode
+    if (ok) document.dispatchEvent(new CustomEvent('meowify-action'));
     // Counter bar + admin messages
     const stats = document.createElement('div'); stats.style.cssText = 'padding:8px 16px;border-top:1px solid rgba(0,0,0,.08);font:11px \'Nunito\',system-ui;color:#555;text-align:center;background:rgba(255,255,255,.3)';
     stats.textContent = '\u{1F30D} ···  \u{1F431} ···  \u{1F4AC} ···';
     const msgBox = document.createElement('div'); msgBox.style.cssText = 'display:none';
     (async () => {
       try {
-        const timeout = new Promise((_, rej) => setTimeout(() => rej(), 3000));
+        const timeout = new Promise((_, rej) => setTimeout(() => rej(), 8000));
         const data = await Promise.race([chrome.runtime.sendMessage({ type: 'getData' }), timeout]);
         if (data && data.counters && data.counters.totalMeowifiers != null) {
           const c = data.counters;
@@ -187,6 +189,12 @@
       } catch {}
     })();
     const foot = document.createElement('div'); foot.style.cssText = 'padding:12px 16px;border-top:1px solid rgba(0,0,0,.08);display:flex;gap:8px;justify-content:flex-end;background:rgba(255,255,255,.2)';
+    // Pixel cat toggle (left-aligned via margin-right:auto + order:-1)
+    const catBtn = document.createElement('button'); catBtn.title = 'Toggle pixel cat mascot'; catBtn.style.cssText = 'padding:8px 14px;border:1px solid rgba(0,0,0,.12);border-radius:8px;background:rgba(255,255,255,.7);color:#111;cursor:pointer;font-family:inherit;font-size:13px;margin-right:auto;order:-1';
+    const setCatBtnState = on => { catBtn.textContent = on ? '🐱 Cat ✓' : '🐱 Cat'; catBtn.style.background = on ? '#7c3aed' : 'rgba(255,255,255,.7)'; catBtn.style.color = on ? '#fff' : '#111'; };
+    try { chrome.storage.local.get('catEnabled', r => setCatBtnState(r.catEnabled || false)); } catch { catBtn.textContent = '🐱 Cat'; }
+    catBtn.onclick = () => { try { chrome.storage.local.get('catEnabled', r => { const s = !(r.catEnabled || false); document.dispatchEvent(new CustomEvent('meowify-cat-toggle', { detail: { enabled: s } })); setCatBtnState(s); }); } catch {} };
+    foot.appendChild(catBtn);
     const close = document.createElement('button'); close.textContent = 'Close'; close.style.cssText = 'padding:8px 14px;border:1px solid rgba(0,0,0,.12);border-radius:8px;background:rgba(255,255,255,.7);color:#111;cursor:pointer;font-family:inherit;font-size:13px'; close.onclick = () => ov.remove(); foot.appendChild(close);
     if (ok) {
       const copy = document.createElement('button'); copy.textContent = 'Copy'; copy.style.cssText = 'padding:8px 14px;border:0;border-radius:8px;background:#111;color:#fff;cursor:pointer;font-family:inherit;font-size:13px'; copy.onclick = async () => { await navigator.clipboard.writeText(res); copy.textContent = 'Copied!'; setTimeout(() => copy.textContent = 'Copy', 1200); }; foot.appendChild(copy);

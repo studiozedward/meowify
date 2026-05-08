@@ -4,7 +4,7 @@ try {
   importScripts('firebase-config.js');
   firebaseConfig = FIREBASE_CONFIG;
 } catch (e) {
-  // firebase-config.js not found — counters disabled
+  console.error('[Meowify] Failed to load firebase-config.js:', e.message);
 }
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -57,10 +57,11 @@ async function reportPending() {
   }
 }
 
-// Fetches fresh counters + messages from Firebase and writes them to storage.
-// Fire-and-forget — callers do not await this.
-async function refreshData() {
-  if (!firebaseConfig) return;
+// Fetches counters + messages from Firebase, returns the result.
+// Always awaited by getData() so the service worker stays alive during the fetch.
+// (Fire-and-forget does NOT work in MV3 — Chrome kills the service worker
+// the moment sendResponse is called, orphaning any background fetches.)
+async function fetchData() {
   try {
     const [countersResp, messagesResp] = await Promise.all([
       timedFetch(firebaseConfig.databaseUrl + '/counters.json'),
@@ -70,21 +71,24 @@ async function refreshData() {
     const messages = messagesResp.ok ? (await messagesResp.json()) : null;
     const data = { counters, messages: Array.isArray(messages) ? messages.slice(0, 3) : [] };
     await chrome.storage.local.set({ cachedData: data, cachedDataAt: Date.now() });
+    return data;
   } catch (e) {
-    // Will retry on next getData() call
+    return null;
   }
 }
 
-// Returns cached data from storage immediately (fast). If the cache is stale,
-// kicks off a background refresh so the next call gets fresher data.
-// Never awaits the network — avoids the MV3 service-worker termination / 3-second
-// content-script timeout that was causing stats to silently disappear.
+// Returns counter data. Serves from 20-minute cache when fresh,
+// otherwise awaits a live fetch from Firebase. The content script
+// allows 8 seconds for this — Firebase REST calls typically take < 1s.
 async function getData() {
   if (!firebaseConfig) return null;
   const cached = await chrome.storage.local.get(['cachedData', 'cachedDataAt']);
   const isFresh = cached.cachedDataAt && Date.now() - cached.cachedDataAt < 1200000;
-  if (!isFresh) refreshData(); // background refresh, do not await
-  return cached.cachedData || null;
+  if (isFresh) return cached.cachedData;
+
+  // Stale or missing — fetch now. Awaiting keeps the service worker alive.
+  const fresh = await fetchData();
+  return fresh || cached.cachedData || null;
 }
 
 chrome.alarms.onAlarm.addListener((alarm) => {
