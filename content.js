@@ -160,9 +160,10 @@
     const msgBox = document.createElement('div'); msgBox.style.cssText = 'display:none';
     (async () => {
       try {
-        const timeout = new Promise((_, rej) => setTimeout(() => rej(), 8000));
-        const data = await Promise.race([chrome.runtime.sendMessage({ type: 'getData' }), timeout]);
-        if (data && data.counters && data.counters.totalMeowifiers != null) {
+        const TIMED_OUT = {};
+        const timeout = new Promise(res => setTimeout(() => res(TIMED_OUT), 8000));
+        const data = await Promise.race([chrome.runtime.sendMessage({ type: 'getData' }).catch(() => null), timeout]);
+        if (data && data !== TIMED_OUT && data.counters && data.counters.totalMeowifiers != null) {
           const c = data.counters;
           stats.textContent = `\u{1F30D} ${(c.totalMeowifiers || 0).toLocaleString()} meowifiers  \u{1F431} ${(c.totalWords || 0).toLocaleString()} meows generated  \u{1F4AC} ${(c.totalInputWords || 0).toLocaleString()} words meowed`;
         } else { stats.remove(); }
