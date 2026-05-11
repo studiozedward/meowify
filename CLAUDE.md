@@ -12,14 +12,26 @@ All encoding/decoding is local. Firebase backend handles community counters only
 | `manifest.json` | Extension manifest (MV3) |
 | `firebase/functions/index.js` | Cloud Function — receives counter reports |
 | `firebase/database.rules.json` | Realtime DB security rules |
+| `cat-mode.js` | Content script — pixel cat mascot + CATAAS image replacement |
 | `firebase-config.js` | Live Firebase credentials — gitignored, never commit |
 | `firebase-config.example.js` | Template for the above |
+| `cat-sprites.png` | Source sprite sheet (ChatGPT-generated, 4×4 tuxedo cat) |
 
 ## Architecture
 - Content script sends `{ type: 'meowified', wordCount, inputWordCount }` to service worker
 - Service worker batches and POSTs to Cloud Function every 10 minutes via alarm
 - Service worker fetches `/counters.json` + `/messages.json` from RTDB (20-min cache)
 - Modal reads data via `{ type: 'getData' }` message to service worker
+
+## Browser Cat (pixel cat mascot)
+- `cat-mode.js` is a separate content script loaded after `content.js` in manifest
+- Communicates with content.js via custom DOM events: `meowify-action` (cat reacts), `meowify-cat-toggle` (user toggles)
+- 32×32 pixel art rendered on `<canvas>` at 64px display (2× scale, `image-rendering: pixelated`)
+- 30-color adaptive palette extracted from ChatGPT-generated sprite sheet
+- 4 frames: sleeping, awake, yawning, reacting (heart eyes)
+- CATAAS API (`cataas.com/cat`) for image replacement — connectivity tested before activating
+- Cat state (`catEnabled`) persisted in `chrome.storage.local`
+- Image replacement is per-page, non-persistent — originals restored on deactivation or navigation
 
 ## Gotchas
 - `importScripts()` in MV3 service workers must be top-level (inside try/catch is fine)

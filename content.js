@@ -133,7 +133,7 @@
     const head = document.createElement('div'); head.style.cssText = 'padding:22px 16px;border-bottom:1px solid rgba(0,0,0,.08);display:flex;align-items:center';
     const logo = document.createElement('img'); logo.src = LOGO_URL; logo.alt = 'Meowify'; logo.style.cssText = 'height:40px;width:auto;object-fit:contain;flex-shrink:0';
     head.appendChild(logo);
-    const body = document.createElement('div'); body.style.cssText = 'padding:16px;display:flex;flex-direction:column;gap:12px';
+    const body = document.createElement('div'); body.style.cssText = 'padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex-shrink:1';
     const subtitle = document.createElement('div'); subtitle.textContent = mode === 'meow' ? 'Meowified text' : 'Unmeowified text'; subtitle.style.cssText = 'font-size:13px;font-weight:600;color:#444;margin-bottom:4px';
     body.appendChild(subtitle);
     let res = null, ok = true;
@@ -143,9 +143,9 @@
       const msg = document.createElement('div'); msg.textContent = "I can't read that :("; msg.style.cssText = 'text-align:center;font-size:16px;margin-top:8px';
       body.append(img, msg);
     } else {
-      const ta = document.createElement('textarea'); ta.value = res; ta.readOnly = true; ta.style.cssText = 'width:100%;min-height:60px;max-height:50vh;resize:none;padding:10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font:13px ui-monospace,monospace;color:#111;background:#fff;overflow-y:auto;box-sizing:border-box;line-height:1.4';
+      const ta = document.createElement('textarea'); ta.value = res; ta.readOnly = true; ta.style.cssText = 'width:100%;min-height:60px;max-height:30vh;resize:none;padding:10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font:13px ui-monospace,monospace;color:#111;background:#fff;overflow-y:auto;box-sizing:border-box;line-height:1.4';
       body.appendChild(ta);
-      requestAnimationFrame(() => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, innerHeight * 0.5) + 'px'; });
+      requestAnimationFrame(() => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, innerHeight * 0.3) + 'px'; });
     }
     // Report word count after successful encode
     if (ok && mode === 'meow') {
@@ -190,12 +190,18 @@
       } catch {}
     })();
     const foot = document.createElement('div'); foot.style.cssText = 'padding:12px 16px;border-top:1px solid rgba(0,0,0,.08);display:flex;gap:8px;justify-content:flex-end;background:rgba(255,255,255,.2)';
-    // Pixel cat toggle (left-aligned via margin-right:auto + order:-1)
-    const catBtn = document.createElement('button'); catBtn.title = 'Toggle pixel cat mascot'; catBtn.style.cssText = 'padding:8px 14px;border:1px solid rgba(0,0,0,.12);border-radius:8px;background:rgba(255,255,255,.7);color:#111;cursor:pointer;font-family:inherit;font-size:13px;margin-right:auto;order:-1';
-    const setCatBtnState = on => { catBtn.textContent = on ? '🐱 Cat ✓' : '🐱 Cat'; catBtn.style.background = on ? '#7c3aed' : 'rgba(255,255,255,.7)'; catBtn.style.color = on ? '#fff' : '#111'; };
-    try { chrome.storage.local.get('catEnabled', r => setCatBtnState(r.catEnabled || false)); } catch { catBtn.textContent = '🐱 Cat'; }
-    catBtn.onclick = () => { try { chrome.storage.local.get('catEnabled', r => { const s = !(r.catEnabled || false); document.dispatchEvent(new CustomEvent('meowify-cat-toggle', { detail: { enabled: s } })); setCatBtnState(s); }); } catch {} };
-    foot.appendChild(catBtn);
+    // Browser Cat toggle (left-aligned)
+    const catToggleWrap = document.createElement('label'); catToggleWrap.title = 'Toggle Browser Cat'; catToggleWrap.style.cssText = 'display:flex;align-items:center;gap:6px;margin-right:auto;order:-1;cursor:pointer';
+    const catEmoji = document.createElement('span'); catEmoji.textContent = '🐱'; catEmoji.style.cssText = 'font-size:16px;line-height:1';
+    const catTrack = document.createElement('span'); catTrack.style.cssText = 'position:relative;display:inline-block;width:36px;height:20px;border-radius:10px;background:#ccc;transition:background .2s';
+    const catThumb = document.createElement('span'); catThumb.style.cssText = 'position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)';
+    catTrack.appendChild(catThumb);
+    const catCheck = document.createElement('input'); catCheck.type = 'checkbox'; catCheck.style.cssText = 'display:none';
+    const setCatState = on => { catTrack.style.background = on ? '#7c3aed' : '#ccc'; catThumb.style.transform = on ? 'translateX(16px)' : 'translateX(0)'; catCheck.checked = on; };
+    try { chrome.storage.local.get('catEnabled', r => setCatState(r.catEnabled || false)); } catch {}
+    catToggleWrap.onclick = (e) => { e.preventDefault(); try { chrome.storage.local.get('catEnabled', r => { const s = !(r.catEnabled || false); document.dispatchEvent(new CustomEvent('meowify-cat-toggle', { detail: { enabled: s } })); setCatState(s); }); } catch {} };
+    catToggleWrap.append(catEmoji, catCheck, catTrack);
+    foot.appendChild(catToggleWrap);
     const close = document.createElement('button'); close.textContent = 'Close'; close.style.cssText = 'padding:8px 14px;border:1px solid rgba(0,0,0,.12);border-radius:8px;background:rgba(255,255,255,.7);color:#111;cursor:pointer;font-family:inherit;font-size:13px'; close.onclick = () => ov.remove(); foot.appendChild(close);
     if (ok) {
       const copy = document.createElement('button'); copy.textContent = 'Copy'; copy.style.cssText = 'padding:8px 14px;border:0;border-radius:8px;background:#111;color:#fff;cursor:pointer;font-family:inherit;font-size:13px'; copy.onclick = async () => { await navigator.clipboard.writeText(res); copy.textContent = 'Copied!'; setTimeout(() => copy.textContent = 'Copy', 1200); }; foot.appendChild(copy);

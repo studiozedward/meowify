@@ -1,6 +1,6 @@
 # Privacy Policy — Meowify
 
-**Last updated: May 5, 2026**
+**Last updated: May 11, 2026**
 
 ---
 
@@ -15,6 +15,15 @@ All encoding and decoding happens locally in your browser using a content script
 - Optionally writes the result back to the field you highlighted it from
 
 No text you highlight, encode, or decode is ever sent to any server. The actual content of your messages is never transmitted.
+
+## Browser Cat (image replacement)
+
+Meowify includes an optional pixel cat mascot ("Browser Cat"). When activated, it replaces images on the current page with random cat photos fetched from the CATAAS (Cat as a Service) public API (`cataas.com`). This feature:
+
+- Only activates when you explicitly click the sleeping cat
+- Fetches cat images directly from CATAAS — no user data is sent with these requests
+- Stores your Browser Cat on/off preference locally using `chrome.storage.local`
+- Does not modify any page content permanently — all original images are restored when you click the cat again or navigate away
 
 ## Community counters
 

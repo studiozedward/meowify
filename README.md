@@ -51,26 +51,6 @@ Case matters — `meow` and `MEOW` are different values. Any text with valid tok
 ### From the Chrome Web Store
 Search for **Meowify** or install directly from the listing page.
 
-### Manual (developer mode)
-1. Download or clone this repo
-2. Go to `chrome://extensions`
-3. Enable **Developer mode** (top right)
-4. Click **Load unpacked** and select the folder
-
----
-
-## Firebase setup (for developers)
-
-The community counters require a Firebase project:
-
-1. Create a Firebase project at https://console.firebase.google.com
-2. Enable Realtime Database
-3. Copy `firebase-config.example.js` to `firebase-config.js` and fill in your project values
-4. Deploy the Cloud Function: `cd firebase && npm install --prefix functions && firebase deploy --only functions`
-5. Deploy security rules: `firebase deploy --only database`
-
-The extension works without Firebase — the counters will simply not appear if the backend is unavailable.
-
 ---
 
 ## Works in
@@ -79,6 +59,18 @@ The extension works without Firebase — the counters will simply not appear if 
 - Meta AI
 - Google Docs
 - Any standard textarea or contenteditable field
+
+---
+
+## Browser Cat
+
+Meowify includes a pixel cat mascot that lives in the corner of your browser. Toggle it on from the Meowify modal — a sleeping tuxedo cat appears in the bottom-right corner.
+
+- **Click the cat** to wake it up — all images on the page transform into random cat photos (via [CATAAS](https://cataas.com))
+- **Click again** to revert all images and send the cat back to sleep
+- The cat **reacts** with heart eyes and a bounce whenever you meowify text
+
+No data is sent to any server by this feature — just image requests to the public CATAAS API. Your preference is stored locally.
 
 ---
 
